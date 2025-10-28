@@ -38,6 +38,8 @@ let fanGeometry = {
   motor: null,
   guard: null,
   blade: null,
+  controlPanel: null,
+  hub: null,
 };
 
 // Initialize WebGL
@@ -115,20 +117,23 @@ function initShaders() {
 // Initialize geometry
 function initGeometry() {
   // Create geometry for each part with realistic fan colors matching the reference
-  fanGeometry.base = createDisk(0.8, 32, 0, [0.15, 0.15, 0.15], 0.05); // Wider black base with depth
+  fanGeometry.base = createDisk(0.6, 32, 0, [0.15, 0.15, 0.15], 0.07); // Wider black base with depth
   fanGeometry.stand = createCylinder(0.04, 2.15, 16, [0.85, 0.85, 0.9]); // Taller, thinner silver stand
   
   // Light blue control panel section of the stand
   fanGeometry.controlPanel = createCylinder(0.06, 0.3, 16, [0.8, 0.9, 1.0]);
   
-  // Light blue rectangular motor housing
-  fanGeometry.motor = createBox(0.24, 0.25, 0.4, [0.8, 0.9, 1.0]);
+  // Light blue cylindrical motor housing (will be rotated sideways)
+  fanGeometry.motor = createCylinder(0.125, 0.4, 32, [0.8, 0.9, 1.0]);
+
+  // Small hub (coin-like) at blade center, same color as motor
+  fanGeometry.hub = createCylinder(0.1, 0.02, 20, [0.8, 0.9, 1.0]);
   
   // White guard with more spokes
   fanGeometry.guard = createGuardCage(0.45, 0.12, 48); // Larger radius, more segments for more spokes
   
   // White blades
-  fanGeometry.blade = createBlade(0.4, 0.07, [0.95, 0.95, 0.95]); // Longer, white blades
+  fanGeometry.blade = createBlade(0.4, 0.2, [0.95, 0.95, 0.95]); // Longer, white blades
 }
 
 // Setup buffers for a geometry
@@ -190,7 +195,7 @@ function drawFanBase() {
   pushMatrix();
 
   // Base disk on ground
-  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0.01, 0]);
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, -0.05, 0]);
   mat4.scale(modelViewMatrix, modelViewMatrix, [1.0, 1.0, 1.0]);
 
   gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
@@ -241,12 +246,13 @@ function drawFanMotor() {
     );
   }
 
-  // Slightly offset the motor housing backward and downward so it sits
-  // a bit behind the control panel and a touch lower (matches reference)
-  // Note: negative z moves backward, negative y moves downward
-  mat4.translate(modelViewMatrix, modelViewMatrix, [0, -0.06, -0.06]);
+  // Slightly offset the motor housing backward and downward
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, -0.06, -0.25]);
 
-  // Motor housing - drawn at the adjusted position
+  // Rotate the cylinder to lay sideways (90 degrees around X axis)
+  mat4.rotateX(modelViewMatrix, modelViewMatrix, Math.PI / 2);
+
+  // Motor housing - drawn at the adjusted position and rotation
   gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
   const count = setupBuffers(fanGeometry.motor);
   gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
@@ -283,6 +289,21 @@ function drawFanBlades() {
 
   // Move blades slightly forward (just in front of motor face)
   mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, 0.16]);
+
+  // Lift the blades slightly upward so they sit a bit higher relative to the motor
+  // Positive Y moves upward
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0.58, -0.015]);
+
+    // Draw small hub (coin-like) at blade center
+    pushMatrix();
+    // Rotate cylinder so its axis aligns with Z (default axis is Y in createCylinder)
+    mat4.rotateX(modelViewMatrix, modelViewMatrix, Math.PI / 2);
+    // After rotation the cylinder spans Z from 0..height, so translate -height/2 to center it on blade plane
+    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -0.01]);
+    gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
+    const hubCount = setupBuffers(fanGeometry.hub);
+    gl.drawElements(gl.TRIANGLES, hubCount, gl.UNSIGNED_SHORT, 0);
+    popMatrix();
 
   // Apply blade rotation (independent of oscillation)
   if (bladeRotationEnabled) {

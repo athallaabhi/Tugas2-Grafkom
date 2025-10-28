@@ -267,7 +267,7 @@ function createBlade(length, width, color = [1, 0.95, 1.0]) {
     
     // Blade vertices (simple trapezoid)
     const verts = [
-        [0, 0, 0],           // Center
+        [0.3, 0.4, 0],           // Center
         [length, width, 0],  // Tip wide
         [length, -width, 0], // Tip narrow
         [0, -width/2, 0]     // Center narrow
@@ -286,7 +286,7 @@ function createBlade(length, width, color = [1, 0.95, 1.0]) {
     // Back face (for double-sided rendering)
     const backBase = positions.length / 3;
     for (const v of verts) {
-        positions.push(v[0], v[1], -0.02);
+        positions.push(v[0], v[1], 0);
         normals.push(0, 0, -1);
         colors.push(...color);
     }
