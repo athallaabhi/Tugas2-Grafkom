@@ -242,7 +242,7 @@ header p {
   border-radius: 3px;
   background: #dee2e6;
   outline: none;
-  -webkit-appearance: none;
+  /*-webkit-appearance: none;*/
   grid-column: 1 / -1;
   margin-top: 5px;
 }

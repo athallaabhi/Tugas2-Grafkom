@@ -34,6 +34,7 @@ let cameraAngle = 60;
 // Geometry data
 let fanGeometry = {
   base: null,
+  baseAccent: null,  // Black cylinder on top of base
   stand: null,
   motor: null,
   guard: null,
@@ -51,7 +52,7 @@ function initGL(canvas) {
   }
 
   gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.15, 0.15, 0.2, 1.0);  // Dark blue-gray background
+  gl.clearColor(0.6, 1.0, 0.6, 1.0);  // Light green background
   gl.enable(gl.DEPTH_TEST);
 
   return true;
@@ -117,7 +118,8 @@ function initShaders() {
 // Initialize geometry
 function initGeometry() {
   // Create geometry for each part with realistic fan colors matching the reference
-  fanGeometry.base = createDisk(0.6, 32, 0, [0.15, 0.15, 0.15], 0.07); // Wider black base with depth
+  fanGeometry.base = createDisk(0.6, 32, 0, [0.15, 0.15, 0.15], 0.05); // Wider black base with depth
+  fanGeometry.baseAccent = createCylinder(0.07, 0.5, 32, [0.1, 0.15, 0.1]); // Black accent cylinder on base
   fanGeometry.stand = createCylinder(0.04, 2.15, 16, [0.85, 0.85, 0.9]); // Taller, thinner silver stand
   
   // Light blue control panel section of the stand
@@ -195,12 +197,20 @@ function drawFanBase() {
   pushMatrix();
 
   // Base disk on ground
-  mat4.translate(modelViewMatrix, modelViewMatrix, [0, -0.05, 0]);
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0.01, 0]);
   mat4.scale(modelViewMatrix, modelViewMatrix, [1.0, 1.0, 1.0]);
 
   gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
-  const count = setupBuffers(fanGeometry.base);
-  gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
+  const baseCount = setupBuffers(fanGeometry.base);
+  gl.drawElements(gl.TRIANGLES, baseCount, gl.UNSIGNED_SHORT, 0);
+
+  // Draw accent cylinder on top of base
+  pushMatrix();
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0.05, 0]); // Move up to top of base
+  gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
+  const accentCount = setupBuffers(fanGeometry.baseAccent);
+  gl.drawElements(gl.TRIANGLES, accentCount, gl.UNSIGNED_SHORT, 0);
+  popMatrix();
 
   popMatrix();
 }
