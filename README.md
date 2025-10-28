@@ -1,6 +1,6 @@
 # Tugas 2: Hierarchical Modeling - Kipas Angin
 
-**Kelompok:** Athalla Abhinaya (5025231107), Nicholas Abel Nathaniel (5025231098)
+**Kelompok:** Athalla Abhinaya (5025231107), Nicholas Abel Nathaniel (5025231098), Nadya Zafira (5025231310)
 
 ## 📋 Deskripsi Tugas
 
