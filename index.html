@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tugas 2 - Hierarchical Modeling Kipas Angin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Tugas 2: Hierarchical Modeling Kipas Angin</h1>
+        <h2>Implementasi WebGL dengan Matrix Stack</h2>
+        <p><strong>Kelompok:</strong> Athalla Abhinaya (5025231107), Nicholas Abel Nathaniel (5025231098)</p>
+    </header>
+
+    <div class="container">
+        <div class="section">
+            <h3>a. Objek Asli & Desain Tree</h3>
+            <div class="tree-diagram">
+                <h4>f. Desain Tree Hubungan Antar Objek:</h4>
+                <pre>
+Fan Body (Root) [Base + Stand]
+   |
+   +-- Fan Motor [Oscillation Motor Housing]
+         | (Rotasi Kiri-Kanan: Oscillation)
+         |
+         +-- Fan Guard [Protective Cage]
+         |     | (Mengikuti Motor)
+         |     +-- Guard Front
+         |     +-- Guard Back
+         |
+         +-- Fan Blade Assembly [3 Blades]
+               | (Rotasi Baling-Baling + Mengikuti Motor)
+               +-- Blade 1
+               +-- Blade 2
+               +-- Blade 3
+                </pre>
+            </div>
+
+            <div class="info-box">
+                <h4>Prinsip Hierarchical Modeling:</h4>
+                <ul>
+                    <li><strong>Root:</strong> Fan Body (Base & Stand)</li>
+                    <li><strong>Parent-Child:</strong> Motor → Guard & Blades</li>
+                    <li><strong>Inheritance:</strong> Oscillation diterapkan pada Motor</li>
+                    <li><strong>Independent Rotation:</strong> Blade rotation terpisah</li>
+                    <li><strong>Matrix Stack:</strong> Push/Pop untuk transformasi hierarki</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>e. Halaman Canvas Aplikasi</h3>
+            <canvas id="fan-canvas" width="800" height="600">
+                Browser Anda tidak mendukung WebGL 2.0.
+            </canvas>
+
+            <div class="controls">
+                <h4>⚙️ Kontrol Animasi</h4>
+                
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="oscillationToggle" checked>
+                        <strong>Oscillation (Osilasi Kiri-Kanan)</strong>
+                    </label>
+                    <label>
+                        Kecepatan Osilasi
+                        <input type="range" id="oscillationSpeed" min="0.5" max="5" step="0.1" value="2">
+                        <span id="oscillationSpeedValue">2.0</span>
+                    </label>
+                    <label>
+                        Sudut Maksimal
+                        <input type="range" id="oscillationAngle" min="10" max="60" step="5" value="30">
+                        <span id="oscillationAngleValue">30°</span>
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="bladeRotationToggle" checked>
+                        <strong>Blade Rotation (Putaran Baling-Baling)</strong>
+                    </label>
+                    <label>
+                        Kecepatan Putaran
+                        <input type="range" id="bladeSpeed" min="0" max="500" step="10" value="200">
+                        <span id="bladeSpeedValue">200</span>
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <h5>Kamera</h5>
+                    <label>
+                        Camera Distance
+                        <input type="range" id="cameraDistance" min="3" max="15" step="0.5" value="8">
+                        <span id="cameraDistanceValue">8</span>
+                    </label>
+                    <label>
+                        Camera Height
+                        <input type="range" id="cameraHeight" min="-2" max="4" step="0.1" value="2">
+                        <span id="cameraHeightValue">2.0</span>
+                    </label>
+                    <label>
+                        Camera Angle
+                        <input type="range" id="cameraAngle" min="0" max="360" step="5" value="45">
+                        <span id="cameraAngleValue">45°</span>
+                    </label>
+                </div>
+
+                <button id="resetButton">🔄 Reset All</button>
+            </div>
+
+            <div class="stats">
+                <h4>📊 Status Animasi</h4>
+                <p>Oscillation Angle: <span id="currentOscillation">0°</span></p>
+                <p>Blade Angle: <span id="currentBlade">0°</span></p>
+                <p>FPS: <span id="fps">0</span></p>
+            </div>
+        </div>
+    </div>
+
+    <section class="description">
+        <h3>📋 Deskripsi Implementasi</h3>
+        <div class="desc-grid">
+            <div class="desc-card">
+                <h4>🏗️ Struktur Hierarki</h4>
+                <p>Model kipas menggunakan <strong>hierarchical modeling</strong> dengan pendekatan <strong>Left-Child Right-Sibling</strong>. Fan Body sebagai root, Fan Motor sebagai child yang memiliki transformasi oscillation, dan Guard serta Blades sebagai children dari Motor yang mewarisi transformasi parent mereka.</p>
+            </div>
+            <div class="desc-card">
+                <h4>🔄 Matrix Stack</h4>
+                <p>Implementasi menggunakan <strong>matrix stack</strong> untuk menyimpan dan mengembalikan transformasi. Setiap node melakukan <code>push()</code> sebelum transformasi dan <code>pop()</code> setelah rendering children, memastikan transformasi tidak bocor ke sibling nodes.</p>
+            </div>
+            <div class="desc-card">
+                <h4>🎬 Animasi</h4>
+                <p><strong>Oscillation:</strong> Motor berotasi kiri-kanan menggunakan fungsi sinus untuk gerakan smooth. <strong>Blade Rotation:</strong> Baling-baling berputar pada sumbu sendiri dengan kecepatan independen. Kedua animasi berjalan simultan dan dapat dikontrol secara terpisah.</p>
+            </div>
+            <div class="desc-card">
+                <h4>🎨 Rendering</h4>
+                <p>Menggunakan <strong>WebGL 2.0</strong> dengan GLSL shaders. Geometri dibuat secara prosedural (cylinder, disk, blade). Lighting menggunakan <strong>Phong shading model</strong> untuk memberikan kedalaman visual pada objek 3D.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- WebGL Shaders -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+in vec4 aPosition;
+in vec4 aNormal;
+in vec3 aColor;
+
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+
+out vec3 vColor;
+
+void main() {
+    vColor = aColor;
+    gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
+}
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+precision mediump float;
+
+in vec3 vColor;
+out vec4 fragColor;
+
+void main() {
+    fragColor = vec4(vColor, 1.0);
+}
+    </script>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
+    <script src="geometry.js"></script>
+    <script src="fan_model.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
