@@ -38,6 +38,7 @@ let fanGeometry = {
   stand: null,
   motor: null,
   guard: null,
+  guardBack: null,  // Back cage
   blade: null,
   controlPanel: null,
   hub: null,
@@ -131,8 +132,11 @@ function initGeometry() {
   // Small hub (coin-like) at blade center, same color as motor
   fanGeometry.hub = createCylinder(0.1, 0.02, 20, [0.8, 0.9, 1.0]);
   
-  // White guard with more spokes
+  // White guard with more spokes (front cage)
   fanGeometry.guard = createGuardCage(0.45, 0.12, 48); // Larger radius, more segments for more spokes
+  
+  // Back cage (same as front)
+  fanGeometry.guardBack = createGuardCage(0.45, 0.12, 48);
   
   // White blades
   fanGeometry.blade = createBlade(0.4, 0.2, [0.95, 0.95, 0.95]); // Longer, white blades
@@ -274,17 +278,41 @@ function drawFanMotor() {
 function drawFanGuard() {
   pushMatrix();
 
-  // Move up to middle of motor (motor height is 0.3, so middle is 0.15)
+  // Move to blade position (same Y and initial position as blades)
   mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0.15, 0]);
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, 0.16]);
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0.58, -0.015]);
 
-  // Move guard forward in front of motor
-  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, 0.2]);
+  // Move guard forward in front of blades
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, 0.06]);
 
-  // Rotate guard to face forward
-  mat4.rotateY(modelViewMatrix, modelViewMatrix, Math.PI / 2);
+  // Rotate 90 degrees around X axis to make cage stand upright
+  mat4.rotateX(modelViewMatrix, modelViewMatrix, Math.PI / 2);
 
   gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
   const count = setupBuffers(fanGeometry.guard);
+  gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
+
+  popMatrix();
+}
+
+// Draw Back Fan Guard (Child of Motor) - Inherits oscillation
+function drawBackFanGuard() {
+  pushMatrix();
+
+  // Move to blade position (same Y and initial position as blades)
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0.15, 0]);
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, 0.16]);
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0.58, -0.015]);
+
+  // Move guard backward behind blades
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -0.06]);
+
+  // Rotate 90 degrees around X axis to make cage stand upright
+  mat4.rotateX(modelViewMatrix, modelViewMatrix, Math.PI / 2);
+
+  gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
+  const count = setupBuffers(fanGeometry.guardBack);
   gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
 
   popMatrix();
@@ -385,6 +413,7 @@ function renderFan() {
 
   // Children of Motor: Guard and Blades (inherit oscillation)
   drawFanGuard();
+  drawBackFanGuard();
   drawFanBlades();
 
   popMatrix(); // Restore before motor

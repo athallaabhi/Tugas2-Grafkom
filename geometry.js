@@ -156,10 +156,10 @@ function createGuardCage(radius, depth, segments) {
     const colors = [];
     const indices = [];
     
-    const color = [1, 0.95, 0.97]; // Dark gray/black for guard
-    const wireRadius = 0.01; // Thin wire
+    const color = [0.9, 0.9, 0.9]; // Light gray/white for guard
+    const wireRadius = 0.012; // Thin wire
     
-    // Front ring
+    // Front ring (outer)
     const frontRing = createGuardRing(radius, segments, 0, color);
     positions.push(...frontRing.positions);
     normals.push(...frontRing.normals);
@@ -167,7 +167,7 @@ function createGuardCage(radius, depth, segments) {
     const offset1 = indices.length > 0 ? Math.max(...indices) + 1 : 0;
     indices.push(...frontRing.indices.map(i => i + offset1));
     
-    // Back ring (smaller)
+    // Back ring (slightly smaller for depth effect)
     const backRing = createGuardRing(radius * 0.95, segments, depth, color);
     const offset2 = positions.length / 3;
     positions.push(...backRing.positions);
@@ -175,7 +175,58 @@ function createGuardCage(radius, depth, segments) {
     colors.push(...backRing.colors);
     indices.push(...backRing.indices.map(i => i + offset2));
     
-    // Vertical bars connecting front and back (12 bars)
+    // Middle concentric rings (3 rings for detail)
+    const middleRing1 = createGuardRing(radius * 0.7, segments, 0, color);
+    const offset3 = positions.length / 3;
+    positions.push(...middleRing1.positions);
+    normals.push(...middleRing1.normals);
+    colors.push(...middleRing1.colors);
+    indices.push(...middleRing1.indices.map(i => i + offset3));
+    
+    const middleRing2 = createGuardRing(radius * 0.45, segments, 0, color);
+    const offset4 = positions.length / 3;
+    positions.push(...middleRing2.positions);
+    normals.push(...middleRing2.normals);
+    colors.push(...middleRing2.colors);
+    indices.push(...middleRing2.indices.map(i => i + offset4));
+    
+    const middleRing3 = createGuardRing(radius * 0.2, segments, 0, color);
+    const offset5 = positions.length / 3;
+    positions.push(...middleRing3.positions);
+    normals.push(...middleRing3.normals);
+    colors.push(...middleRing3.colors);
+    indices.push(...middleRing3.indices.map(i => i + offset5));
+    
+    // Radial spokes connecting rings (16 spokes like a real fan)
+    const spokeCount = 16;
+    for (let i = 0; i < spokeCount; i++) {
+        const angle = (i / spokeCount) * 2 * Math.PI;
+        const x1 = radius * Math.cos(angle);
+        const z1 = radius * Math.sin(angle);
+        const x2 = 0; // Center
+        const z2 = 0;
+        
+        const baseIdx = positions.length / 3;
+        
+        // Create thin radial spoke (flat ribbon)
+        const spokeWidth = wireRadius * 0.8;
+        positions.push(x1, spokeWidth, z1);
+        positions.push(x2, spokeWidth, z2);
+        positions.push(x2, -spokeWidth, z2);
+        positions.push(x1, -spokeWidth, z1);
+        
+        normals.push(0, 0, 1);
+        normals.push(0, 0, 1);
+        normals.push(0, 0, 1);
+        normals.push(0, 0, 1);
+        
+        colors.push(...color, ...color, ...color, ...color);
+        
+        indices.push(baseIdx, baseIdx + 1, baseIdx + 2);
+        indices.push(baseIdx, baseIdx + 2, baseIdx + 3);
+    }
+    
+    // Vertical connecting bars between front and back (12 bars)
     const barCount = 12;
     for (let i = 0; i < barCount; i++) {
         const angle = (i / barCount) * 2 * Math.PI;
@@ -186,11 +237,12 @@ function createGuardCage(radius, depth, segments) {
         
         const baseIdx = positions.length / 3;
         
-        // Create thin bar
-        positions.push(x, 0, z);
-        positions.push(xBack, 0, zBack - depth);
-        positions.push(xBack, 0, zBack - depth);
-        positions.push(x, 0, z);
+        // Create connecting bar
+        const barWidth = wireRadius;
+        positions.push(x, barWidth, z);
+        positions.push(xBack, barWidth, zBack - depth);
+        positions.push(xBack, -barWidth, zBack - depth);
+        positions.push(x, -barWidth, z);
         
         normals.push(Math.cos(angle), 0, Math.sin(angle));
         normals.push(Math.cos(angle), 0, Math.sin(angle));
