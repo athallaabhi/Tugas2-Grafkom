@@ -71,29 +71,79 @@ function createCylinder(radius, height, segments, color = [0.8, 0.8, 0.8]) {
     return { positions, normals, colors, indices };
 }
 
-// Generate disk/circle (for base)
-function createDisk(radius, segments, yPos = 0, color = [0.3, 0.3, 0.3]) {
+// Generate disk/circle with depth (for base)
+function createDisk(radius, segments, yPos = 0, color = [0.3, 0.3, 0.3], depth = 0.05) {
     const positions = [];
     const normals = [];
     const colors = [];
     const indices = [];
     
-    // Center vertex
-    positions.push(0, yPos, 0);
+    // Top face
+    // Center vertex (top)
+    positions.push(0, yPos + depth, 0);
     normals.push(0, 1, 0);
     colors.push(...color);
     
-    // Edge vertices
+    // Edge vertices (top)
     for (let i = 0; i <= segments; i++) {
         const theta = (i / segments) * 2 * Math.PI;
-        positions.push(radius * Math.cos(theta), yPos, radius * Math.sin(theta));
+        positions.push(radius * Math.cos(theta), yPos + depth, radius * Math.sin(theta));
         normals.push(0, 1, 0);
         colors.push(...color);
     }
     
-    // Indices
+    // Top face indices
     for (let i = 0; i < segments; i++) {
         indices.push(0, i + 1, i + 2);
+    }
+
+    // Bottom face
+    // Center vertex (bottom)
+    const bottomCenterIndex = positions.length / 3;
+    positions.push(0, yPos, 0);
+    normals.push(0, -1, 0);
+    colors.push(...color);
+    
+    // Edge vertices (bottom)
+    for (let i = 0; i <= segments; i++) {
+        const theta = (i / segments) * 2 * Math.PI;
+        positions.push(radius * Math.cos(theta), yPos, radius * Math.sin(theta));
+        normals.push(0, -1, 0);
+        colors.push(...color);
+    }
+    
+    // Bottom face indices
+    for (let i = 0; i < segments; i++) {
+        indices.push(
+            bottomCenterIndex,
+            bottomCenterIndex + i + 2,
+            bottomCenterIndex + i + 1
+        );
+    }
+
+    // Side walls
+    const sideStartIndex = positions.length / 3;
+    for (let i = 0; i <= segments; i++) {
+        const theta = (i / segments) * 2 * Math.PI;
+        const x = radius * Math.cos(theta);
+        const z = radius * Math.sin(theta);
+        
+        // Bottom vertex
+        positions.push(x, yPos, z);
+        normals.push(Math.cos(theta), 0, Math.sin(theta));
+        colors.push(...color);
+        
+        // Top vertex
+        positions.push(x, yPos + depth, z);
+        normals.push(Math.cos(theta), 0, Math.sin(theta));
+        colors.push(...color);
+    }
+    
+    // Side indices
+    for (let i = 0; i < segments; i++) {
+        const base = sideStartIndex + i * 2;
+        indices.push(base, base + 1, base + 2);
+        indices.push(base + 1, base + 3, base + 2);
     }
     
     return { positions, normals, colors, indices };
@@ -106,7 +156,7 @@ function createGuardCage(radius, depth, segments) {
     const colors = [];
     const indices = [];
     
-    const color = [0.15, 0.15, 0.15]; // Dark gray/black for guard
+    const color = [1, 0.95, 0.97]; // Dark gray/black for guard
     const wireRadius = 0.01; // Thin wire
     
     // Front ring
@@ -209,7 +259,7 @@ function createGuardRing(radius, segments, zOffset, color) {
 }
 
 // Generate fan blade (wing shape)
-function createBlade(length, width, color = [0.95, 0.95, 1.0]) {
+function createBlade(length, width, color = [1, 0.95, 1.0]) {
     const positions = [];
     const normals = [];
     const colors = [];
@@ -243,6 +293,67 @@ function createBlade(length, width, color = [0.95, 0.95, 1.0]) {
     
     indices.push(backBase, backBase + 2, backBase + 1);
     indices.push(backBase, backBase + 3, backBase + 2);
+    
+    return { positions, normals, colors, indices };
+}
+
+// Generate box/rectangular prism
+function createBox(width, height, depth, color = [0.8, 0.8, 0.8]) {
+    const positions = [];
+    const normals = [];
+    const colors = [];
+    const indices = [];
+    
+    // Half dimensions for vertex positions
+    const w = width / 2;
+    const h = height / 2;
+    const d = depth / 2;
+    
+    // Define the vertices (8 corners of the box)
+    const vertices = [
+        // Front face vertices
+        [-w, -h, d],  // 0
+        [w, -h, d],   // 1
+        [w, h, d],    // 2
+        [-w, h, d],   // 3
+        // Back face vertices
+        [-w, -h, -d], // 4
+        [w, -h, -d],  // 5
+        [w, h, -d],   // 6
+        [-w, h, -d]   // 7
+    ];
+    
+    // Define faces (6 faces, each with a normal vector)
+    const faces = [
+        // Front face: vertices and normal
+        { verts: [0, 1, 2, 3], normal: [0, 0, 1] },
+        // Back face
+        { verts: [5, 4, 7, 6], normal: [0, 0, -1] },
+        // Top face
+        { verts: [3, 2, 6, 7], normal: [0, 1, 0] },
+        // Bottom face
+        { verts: [4, 5, 1, 0], normal: [0, -1, 0] },
+        // Right face
+        { verts: [1, 5, 6, 2], normal: [1, 0, 0] },
+        // Left face
+        { verts: [4, 0, 3, 7], normal: [-1, 0, 0] }
+    ];
+    
+    // Generate vertices, normals, and colors for each face
+    faces.forEach(face => {
+        face.verts.forEach(vertIndex => {
+            positions.push(...vertices[vertIndex]);
+            normals.push(...face.normal);
+            colors.push(...color);
+        });
+        
+        // Add indices for the face (two triangles)
+        const baseIndex = positions.length / 3 - 4; // 4 vertices per face
+        indices.push(
+            baseIndex, baseIndex + 1, baseIndex + 2,
+            baseIndex, baseIndex + 2, baseIndex + 3
+        );
+    });
     
     return { positions, normals, colors, indices };
 }

@@ -27,9 +27,9 @@ let maxOscillationAngle = 30;
 let bladeSpeed = 200;
 
 // Camera parameters
-let cameraDistance = 8;
-let cameraHeight = 2;
-let cameraAngle = 45;
+let cameraDistance = 7;
+let cameraHeight = 2.5;
+let cameraAngle = 60;
 
 // Geometry data
 let fanGeometry = {
@@ -49,7 +49,7 @@ function initGL(canvas) {
   }
 
   gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.95, 0.95, 1.0, 1.0);
+  gl.clearColor(0.15, 0.15, 0.2, 1.0);  // Dark blue-gray background
   gl.enable(gl.DEPTH_TEST);
 
   return true;
@@ -114,12 +114,21 @@ function initShaders() {
 
 // Initialize geometry
 function initGeometry() {
-  // Create geometry for each part with realistic fan colors
-  fanGeometry.base = createDisk(0.5, 32, 0, [0.2, 0.2, 0.2]); // Black base
-  fanGeometry.stand = createCylinder(0.05, 1.5, 16, [0.7, 0.7, 0.75]); // Silver stand
-  fanGeometry.motor = createCylinder(0.15, 0.3, 16, [0.15, 0.15, 0.15]); // Dark motor
-  fanGeometry.guard = createGuardCage(0.4, 0.15, 32); // Black cage guard
-  fanGeometry.blade = createBlade(0.35, 0.08, [0.3, 0.5, 0.8]); // Blue blades
+  // Create geometry for each part with realistic fan colors matching the reference
+  fanGeometry.base = createDisk(0.8, 32, 0, [0.15, 0.15, 0.15], 0.05); // Wider black base with depth
+  fanGeometry.stand = createCylinder(0.04, 2.15, 16, [0.85, 0.85, 0.9]); // Taller, thinner silver stand
+  
+  // Light blue control panel section of the stand
+  fanGeometry.controlPanel = createCylinder(0.06, 0.3, 16, [0.8, 0.9, 1.0]);
+  
+  // Light blue rectangular motor housing
+  fanGeometry.motor = createBox(0.24, 0.25, 0.4, [0.8, 0.9, 1.0]);
+  
+  // White guard with more spokes
+  fanGeometry.guard = createGuardCage(0.45, 0.12, 48); // Larger radius, more segments for more spokes
+  
+  // White blades
+  fanGeometry.blade = createBlade(0.4, 0.07, [0.95, 0.95, 0.95]); // Longer, white blades
 }
 
 // Setup buffers for a geometry
@@ -195,13 +204,23 @@ function drawFanBase() {
 function drawFanStand() {
   pushMatrix();
 
-  // Stand cylinder rising from base
+  // Main stand cylinder rising from base
   mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, 0]);
   mat4.scale(modelViewMatrix, modelViewMatrix, [1.0, 1.0, 1.0]);
 
   gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
-  const count = setupBuffers(fanGeometry.stand);
-  gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
+  const standCount = setupBuffers(fanGeometry.stand);
+  gl.drawElements(gl.TRIANGLES, standCount, gl.UNSIGNED_SHORT, 0);
+
+  // Control panel section near the top
+  pushMatrix();
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 1.5, 0]); // Position control panel near top
+  
+  gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
+  const controlCount = setupBuffers(fanGeometry.controlPanel);
+  gl.drawElements(gl.TRIANGLES, controlCount, gl.UNSIGNED_SHORT, 0);
+  
+  popMatrix();
 
   popMatrix();
 }
@@ -210,8 +229,8 @@ function drawFanStand() {
 function drawFanMotor() {
   pushMatrix();
 
-  // Move to top of stand (stand height = 1.5)
-  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 1.5, 0]);
+  // Move to top of stand plus control panel (2.0 + 0.3)
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, 2.3, 0]);
 
   // Apply oscillation rotation (this affects all children!)
   if (oscillationEnabled) {
@@ -222,9 +241,12 @@ function drawFanMotor() {
     );
   }
 
-  // Motor housing - centered at top of stand
-  // No additional translation needed, motor is already positioned
+  // Slightly offset the motor housing backward and downward so it sits
+  // a bit behind the control panel and a touch lower (matches reference)
+  // Note: negative z moves backward, negative y moves downward
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, -0.06, -0.06]);
 
+  // Motor housing - drawn at the adjusted position
   gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
   const count = setupBuffers(fanGeometry.motor);
   gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
