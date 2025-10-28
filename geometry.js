@@ -259,7 +259,7 @@ function createGuardCage(radius, depth, segments) {
 }
 
 // Generate single ring for guard
-function createGuardRing(radius, segments, zOffset, color) {
+function createGuardRing(radius, segments, zOffset, color, depth = 0.01) {
     const positions = [];
     const normals = [];
     const colors = [];
@@ -267,31 +267,27 @@ function createGuardRing(radius, segments, zOffset, color) {
     
     const tubeRadius = 0.015;
     const tubeSegments = 8;
-    
-    // Create torus-like ring
+    // The ring will have thickness along Z axis: [-depth/2, +depth/2]
     for (let i = 0; i <= segments; i++) {
         const theta = (i / segments) * 2 * Math.PI;
         const centerX = radius * Math.cos(theta);
         const centerZ = radius * Math.sin(theta);
-        
         for (let j = 0; j <= tubeSegments; j++) {
             const phi = (j / tubeSegments) * 2 * Math.PI;
             const tubeX = tubeRadius * Math.cos(phi);
             const tubeY = tubeRadius * Math.sin(phi);
-            
-            // Position on torus
+            // Position on torus, with depth
+            // Instead of just -zOffset, we offset by depth
+            const zDepth = tubeY * (depth / tubeRadius) / 2; // scale tubeY to [-depth/2, +depth/2]
             const x = centerX + tubeX * Math.cos(theta);
             const y = tubeY;
-            const z = centerZ + tubeX * Math.sin(theta) - zOffset;
-            
+            const z = centerZ + tubeX * Math.sin(theta) - zOffset + zDepth;
             positions.push(x, y, z);
-            
             // Normal
             const nx = Math.cos(phi) * Math.cos(theta);
             const ny = Math.sin(phi);
             const nz = Math.cos(phi) * Math.sin(theta);
             normals.push(nx, ny, nz);
-            
             colors.push(...color);
         }
     }

@@ -39,6 +39,7 @@ let fanGeometry = {
   motor: null,
   guard: null,
   guardBack: null,  // Back cage
+  guardRing: null,  // Ring between front and back guards
   blade: null,
   controlPanel: null,
   hub: null,
@@ -137,6 +138,9 @@ function initGeometry() {
   
   // Back cage (same as front)
   fanGeometry.guardBack = createGuardCage(0.45, 0.12, 48);
+  
+  // Dark ring geometry between the front and back guards
+  fanGeometry.guardRing = createGuardRing(0.5, 48, 0.06, [0.9, 0.9, 0.9]); // dark ring between guards
   
   // White blades
   fanGeometry.blade = createBlade(0.4, 0.2, [0.95, 0.95, 0.95]); // Longer, white blades
@@ -292,6 +296,14 @@ function drawFanGuard() {
   gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
   const count = setupBuffers(fanGeometry.guard);
   gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
+
+  // Draw the ring between two guards
+  pushMatrix();
+  mat4.translate(modelViewMatrix, modelViewMatrix, [0, -0.05, 0]); // halfway between front and back guards
+  gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
+  const ringCount = setupBuffers(fanGeometry.guardRing);
+  gl.drawElements(gl.TRIANGLES, ringCount, gl.UNSIGNED_SHORT, 0);
+  popMatrix();
 
   popMatrix();
 }
